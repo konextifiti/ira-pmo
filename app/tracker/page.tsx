@@ -5,6 +5,8 @@ import Link from "next/link"
 import { Search, LayoutGrid, Table2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import StatusBadge from "@/components/ui/StatusBadge"
+import { usePermissions } from "@/lib/permissions/usePermissions"
+import { filterSitesByDomain, shouldHideRawData, getDataVisibility } from "@/lib/permissions/dataGate"
 
 interface Site {
   id: number
@@ -36,6 +38,10 @@ export default function TrackerPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [view, setView] = useState<"table" | "grid">("table")
+  const { getVisibility, domains } = usePermissions()
+
+  const visibility = getVisibility("bts_tracker")
+  const { showAggregateOnly, domainFilter } = getDataVisibility(visibility, "bts_tracker")
 
   useEffect(() => {
     supabase
@@ -43,9 +49,15 @@ export default function TrackerPage() {
       .select("id, site_code, name, region, status, metadata, kpi_reports(go_no_go)")
       .order("site_code")
       .then(({ data }) => {
-        if (data) setSites(data as Site[])
+        if (data) {
+          let result = data as Site[]
+          if (domainFilter) {
+            result = filterSitesByDomain(result, domains)
+          }
+          setSites(result)
+        }
       })
-  }, [])
+  }, [domainFilter, domains])
 
   const statuses = ["All", ...new Set(sites.map((s) => s.status))]
 
@@ -63,7 +75,47 @@ export default function TrackerPage() {
     const kr = s.kpi_reports?.[0]
     return kr?.go_no_go || "—"
   }
-  const isGo = (s: Site) => goLabel(s) === "GO"
+
+  if (showAggregateOnly) {
+    const byStatus: Record<string, number> = {}
+    sites.forEach((s) => {
+      byStatus[s.status] = (byStatus[s.status] || 0) + 1
+    })
+    const total = sites.length
+
+    return (
+      <div className="p-6 space-y-4">
+        <h2 className="text-sm font-semibold text-white mb-2">
+          BTS Tracker — Summary
+        </h2>
+        <p className="text-xs text-[#64748B] mb-4">
+          Aggregate view only · {total} site{total !== 1 ? "s" : ""}
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {Object.entries(byStatus)
+            .sort((a, b) => b[1] - a[1])
+            .map(([status, count]) => {
+              const gc = gridColors[status] || { bg: "#1E293B", border: "#475569" }
+              return (
+                <div
+                  key={status}
+                  className="rounded-lg border p-4"
+                  style={{ backgroundColor: gc.bg, borderColor: gc.border }}
+                >
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: gc.border }}
+                  >
+                    {count}
+                  </div>
+                  <div className="text-xs text-[#94A3B8] mt-1">{status}</div>
+                </div>
+              )
+            })}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-4">

@@ -2,6 +2,8 @@ import { supabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { getUserPermissions, getModuleVisibility, getEffectiveDomains } from "@/lib/permissions/permissions"
+import { shouldHideRawData, domainMatch } from "@/lib/permissions/dataGate"
 
 const agentSteps = [
   { code: "A2", label: "Design" },
@@ -28,6 +30,29 @@ export default async function SitePage({ params }: PageProps) {
 
   if (error || !site) notFound()
 
+  const userPerms = await getUserPermissions()
+  const perms = userPerms?.permissions
+  const siteVisibility = perms ? getModuleVisibility("site_detail", perms) : "all"
+  const hideRaw = shouldHideRawData(siteVisibility)
+  const domains = perms ? getEffectiveDomains(perms) : ["all"]
+  const restricted = siteVisibility === "own_scope" && !domainMatch(site.region, domains)
+
+  if (restricted) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-6 text-center">
+          <h2 className="text-sm font-semibold text-white mb-2">
+            Site Not in Your Scope
+          </h2>
+          <p className="text-xs text-[#64748B]">
+            This site is outside your assigned domain. Contact your PMO if you
+            need access.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const { data: runs } = await supabase
     .from("agent_runs")
     .select(
@@ -50,24 +75,25 @@ export default async function SitePage({ params }: PageProps) {
   const runForAgent = (code: string) =>
     runs?.find((r: any) => (r.project_agents as any)?.agent_types?.code === code)
 
-  const spvGate = (run: any) => {
-    const eval_ = run?.spv_evaluations?.[0]
-    if (!eval_) return null
-    const dims = [eval_.score_dim1, eval_.score_dim2, eval_.score_dim3, eval_.score_dim4, eval_.score_dim5]
-    const total = dims.reduce((a: number, b: number) => a + (b || 0), 0)
-    return { dims, total, verdict: eval_.verdict, reviewer: eval_.reviewer_name, notes: eval_.notes }
-  }
-
-  const tabs = [
-    { value: "overview", label: "Overview" },
-    { value: "a2", label: "A2 Design" },
-    { value: "a3", label: "A3 Verify" },
-    { value: "a6", label: "A6 Survey" },
-    { value: "a5", label: "A5 KPI" },
-  ]
+  const tabs = hideRaw
+    ? [{ value: "overview", label: "Overview" }]
+    : [
+        { value: "overview", label: "Overview" },
+        { value: "a2", label: "A2 Design" },
+        { value: "a3", label: "A3 Verify" },
+        { value: "a6", label: "A6 Survey" },
+        { value: "a5", label: "A5 KPI" },
+      ]
 
   return (
     <div className="p-6 space-y-6">
+      {hideRaw && (
+        <div className="rounded-lg border border-[#F59E0B] bg-[#451A03] px-4 py-2 text-xs text-[#FBBF24]">
+          Summary view — raw evidence and communication logs are hidden per your
+          access level.
+        </div>
+      )}
+
       {/* Site Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -259,80 +285,88 @@ export default async function SitePage({ params }: PageProps) {
         </TabsContent>
 
         {/* A2 Design */}
-        <TabsContent value="a2">
-          <SiteTabContent
-            leftConfig={[
-              ["IP BTS", m.ip_bts],
-              ["IP GW", m.ip_gw],
-              ["VLAN ID", m.vlan_id],
-              ["SFP Type", m.sfp_type],
-              ["MIMO Config", m.mimo_config],
-              ["Sync Source", m.sync_source],
-              ["Clock Type", m.clock_type],
-            ]}
-            leftTitle="LLD Configuration"
-            run={runForAgent("A2")}
-          />
-        </TabsContent>
+        {!hideRaw && (
+          <TabsContent value="a2">
+            <SiteTabContent
+              leftConfig={[
+                ["IP BTS", m.ip_bts],
+                ["IP GW", m.ip_gw],
+                ["VLAN ID", m.vlan_id],
+                ["SFP Type", m.sfp_type],
+                ["MIMO Config", m.mimo_config],
+                ["Sync Source", m.sync_source],
+                ["Clock Type", m.clock_type],
+              ]}
+              leftTitle="LLD Configuration"
+              run={runForAgent("A2")}
+            />
+          </TabsContent>
+        )}
 
         {/* A3 Verify */}
-        <TabsContent value="a3">
-          <SiteTabContent
-            leftConfig={[
-              ["Radio Type", m.radio_type],
-              ["TMA Type", m.tma_type],
-              ["Retrofit", m.retrofit],
-              ["Cable Length", m.cable_length],
-              ["Antenna Type", m.antenna_type],
-              ["Mechanical Tilt", m.mechanical_tilt],
-              ["Electrical Tilt", m.electrical_tilt],
-            ]}
-            leftTitle="Verify Evidence"
-            run={runForAgent("A3")}
-          />
-        </TabsContent>
+        {!hideRaw && (
+          <TabsContent value="a3">
+            <SiteTabContent
+              leftConfig={[
+                ["Radio Type", m.radio_type],
+                ["TMA Type", m.tma_type],
+                ["Retrofit", m.retrofit],
+                ["Cable Length", m.cable_length],
+                ["Antenna Type", m.antenna_type],
+                ["Mechanical Tilt", m.mechanical_tilt],
+                ["Electrical Tilt", m.electrical_tilt],
+              ]}
+              leftTitle="Verify Evidence"
+              run={runForAgent("A3")}
+            />
+          </TabsContent>
+        )}
 
         {/* A6 Survey */}
-        <TabsContent value="a6">
-          <SiteTabContent
-            leftConfig={[
-              ["Survey Date", m.survey_date],
-              ["Surveyor", m.surveyor],
-              ["Tower Height", m.tower_height],
-              ["Tower Type", m.tower_type],
-              ["Access Road", m.access_road],
-              ["Power Source", m.power_source],
-              ["Fence Condition", m.fence_condition],
-            ]}
-            leftTitle="Field Survey"
-            run={runForAgent("A6")}
-          />
-        </TabsContent>
+        {!hideRaw && (
+          <TabsContent value="a6">
+            <SiteTabContent
+              leftConfig={[
+                ["Survey Date", m.survey_date],
+                ["Surveyor", m.surveyor],
+                ["Tower Height", m.tower_height],
+                ["Tower Type", m.tower_type],
+                ["Access Road", m.access_road],
+                ["Power Source", m.power_source],
+                ["Fence Condition", m.fence_condition],
+              ]}
+              leftTitle="Field Survey"
+              run={runForAgent("A6")}
+            />
+          </TabsContent>
+        )}
 
         {/* A5 KPI */}
-        <TabsContent value="a5">
-          <SiteTabContent
-            leftConfig={
-              (() => {
-                const kpi = runForAgent("A5")?.kpi_reports?.[0]
-                return kpi
-                  ? [
-                      ["RSRP", kpi.rsrp],
-                      ["RSRQ", kpi.rsrq],
-                      ["SINR", kpi.sinr],
-                      ["CQI", kpi.cqi],
-                      ["Throughput DL", kpi.throughput_dl],
-                      ["Throughput UL", kpi.throughput_ul],
-                      ["Latency", kpi.latency],
-                      ["Availability", kpi.availability],
-                    ]
-                  : []
-              })()
-            }
-            leftTitle="KPI Report"
-            run={runForAgent("A5")}
-          />
-        </TabsContent>
+        {!hideRaw && (
+          <TabsContent value="a5">
+            <SiteTabContent
+              leftConfig={
+                (() => {
+                  const kpi = runForAgent("A5")?.kpi_reports?.[0]
+                  return kpi
+                    ? [
+                        ["RSRP", kpi.rsrp],
+                        ["RSRQ", kpi.rsrq],
+                        ["SINR", kpi.sinr],
+                        ["CQI", kpi.cqi],
+                        ["Throughput DL", kpi.throughput_dl],
+                        ["Throughput UL", kpi.throughput_ul],
+                        ["Latency", kpi.latency],
+                        ["Availability", kpi.availability],
+                      ]
+                    : []
+                })()
+              }
+              leftTitle="KPI Report"
+              run={runForAgent("A5")}
+            />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   )
@@ -351,7 +385,6 @@ function SiteTabContent({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Left: config/output */}
       <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-4">
         <h3 className="text-sm font-semibold text-white mb-3">{leftTitle}</h3>
         {leftConfig.length > 0 ? (
@@ -374,7 +407,6 @@ function SiteTabContent({
         )}
       </div>
 
-      {/* Right: SPV Gate */}
       {gate ? (
         <SpvGateCard gate={gate} />
       ) : (
@@ -417,9 +449,7 @@ function SpvGateCard({ gate }: { gate: { dims: number[]; total: number; verdict:
             <div className="text-lg font-bold text-[#00D4D4]">
               {score ?? 0}
             </div>
-            <div className="text-[10px] text-[#64748B] mt-0.5">
-              /10
-            </div>
+            <div className="text-[10px] text-[#64748B] mt-0.5">/10</div>
             <div className="text-[9px] text-[#94A3B8] mt-1 leading-tight">
               {dimLabels[i]}
             </div>
@@ -427,7 +457,6 @@ function SpvGateCard({ gate }: { gate: { dims: number[]; total: number; verdict:
         ))}
       </div>
 
-      {/* Total */}
       <div className="flex items-center justify-between text-xs mb-2">
         <span className="text-[#94A3B8]">Total Score</span>
         <span className="text-white font-bold font-mono">
@@ -435,7 +464,6 @@ function SpvGateCard({ gate }: { gate: { dims: number[]; total: number; verdict:
         </span>
       </div>
 
-      {/* Progress */}
       <div className="h-2 rounded-full bg-[#1E3A5F] overflow-hidden mb-4">
         <div
           className="h-full rounded-full bg-gradient-to-r from-[#7c3aed] to-[#00D4D4] transition-all"
@@ -443,7 +471,6 @@ function SpvGateCard({ gate }: { gate: { dims: number[]; total: number; verdict:
         />
       </div>
 
-      {/* Verdict */}
       <div className="flex items-center justify-between text-xs">
         <div>
           <span className="text-[#64748B]">Verdict: </span>

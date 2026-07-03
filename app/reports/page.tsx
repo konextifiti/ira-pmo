@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase"
+import { getUserPermissions, getModuleVisibility } from "@/lib/permissions/permissions"
+import { shouldHideRawData } from "@/lib/permissions/dataGate"
 
 const weeks = [
   { label: "W22", value: 12 },
@@ -47,8 +49,20 @@ export default async function ReportsPage() {
   const integrationPct = total ? Math.round((integration / total) * 100) : 0
   const blockedPct = total ? Math.round((blocked / total) * 100) : 0
 
+  const userPerms = await getUserPermissions()
+  const perms = userPerms?.permissions
+  const visibility = perms ? getModuleVisibility("reports", perms) : "all"
+  const hideRaw = shouldHideRawData(visibility)
+
   return (
     <div className="p-6 space-y-6">
+      {hideRaw && (
+        <div className="rounded-lg border border-[#F59E0B] bg-[#451A03] px-4 py-2 text-xs text-[#FBBF24]">
+          Summary view — detailed evidence and communication logs are hidden per
+          your access level.
+        </div>
+      )}
+
       {/* Header + Export */}
       <div className="flex items-center justify-between">
         <h1 className="text-base font-semibold text-white">Reports</h1>
@@ -130,71 +144,85 @@ export default async function ReportsPage() {
         ))}
       </div>
 
-      {/* PMO Report Card */}
-      <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-5">
-        <h3 className="text-sm font-semibold text-white mb-4">
-          PMO Report — Project IRA
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div>
-            <h4 className="text-xs font-semibold text-[#00D4D4] mb-2 uppercase tracking-wider">
-              Executive Summary
-            </h4>
-            <p className="text-xs text-[#94A3B8] leading-relaxed">
-              Project IRA (Nokia 5G SA) has achieved 40% overall completion
-              across 100 sites in 7 regions. On Air delivery stands at 32% with
-              strong momentum in Jawa and DKI Jakarta. Integration pipeline
-              remains healthy at 24%, while 8 sites are currently blocked
-              awaiting transport clearance. SPV approval rate is at 78%,
-              indicating consistent quality across agent outputs. The project is
-              on track to meet the Q3 milestone target of 60% completion.
-            </p>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-[#F59E0B] mb-2 uppercase tracking-wider">
-              Risk Register
-            </h4>
-            <ul className="space-y-2">
-              {[
-                "Transport delivery delays in Sumatera and Kalimantan regions affecting 12 sites",
-                "RBS vendor procurement backlog — 5 sites awaiting equipment allocation",
-                "SPV queue bottleneck: 22 evaluations pending review, avg wait 3.2 days",
-                "Agent A4 (Config Auditor) showing 15% lower throughput vs target SLA",
-              ].map((r, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-xs text-[#94A3B8]"
-                >
-                  <span className="text-[#F87171] mt-0.5 shrink-0">•</span>
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-[#10B981] mb-2 uppercase tracking-wider">
-              Next Week Targets
-            </h4>
-            <ul className="space-y-2">
-              {[
-                "On Air: 8 sites in Jawa and DKI Jakarta",
-                "Integration: Complete 12 sites across Banten and Sumatera",
-                "SPV: Clear 15 pending evaluations from current queue",
-                "Agent A4: Reprovision config auditor for improved throughput",
-                "Transport: Resolve delivery blockers for 5 Sumatera sites",
-              ].map((t, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-2 text-xs text-[#94A3B8]"
-                >
-                  <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
-                  <span>{t}</span>
-                </li>
-              ))}
-            </ul>
+      {/* PMO Report Card - only show raw data sections if visibility allows */}
+      {!hideRaw && (
+        <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-5">
+          <h3 className="text-sm font-semibold text-white mb-4">
+            PMO Report — Project IRA
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <h4 className="text-xs font-semibold text-[#00D4D4] mb-2 uppercase tracking-wider">
+                Executive Summary
+              </h4>
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
+                Project IRA (Nokia 5G SA) has achieved 40% overall completion
+                across 100 sites in 7 regions. On Air delivery stands at 32% with
+                strong momentum in Jawa and DKI Jakarta. Integration pipeline
+                remains healthy at 24%, while 8 sites are currently blocked
+                awaiting transport clearance. SPV approval rate is at 78%,
+                indicating consistent quality across agent outputs. The project is
+                on track to meet the Q3 milestone target of 60% completion.
+              </p>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-[#F59E0B] mb-2 uppercase tracking-wider">
+                Risk Register
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  "Transport delivery delays in Sumatera and Kalimantan regions affecting 12 sites",
+                  "RBS vendor procurement backlog — 5 sites awaiting equipment allocation",
+                  "SPV queue bottleneck: 22 evaluations pending review, avg wait 3.2 days",
+                  "Agent A4 (Config Auditor) showing 15% lower throughput vs target SLA",
+                ].map((r, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-xs text-[#94A3B8]"
+                  >
+                    <span className="text-[#F87171] mt-0.5 shrink-0">•</span>
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="text-xs font-semibold text-[#10B981] mb-2 uppercase tracking-wider">
+                Next Week Targets
+              </h4>
+              <ul className="space-y-2">
+                {[
+                  "On Air: 8 sites in Jawa and DKI Jakarta",
+                  "Integration: Complete 12 sites across Banten and Sumatera",
+                  "SPV: Clear 15 pending evaluations from current queue",
+                  "Agent A4: Reprovision config auditor for improved throughput",
+                  "Transport: Resolve delivery blockers for 5 Sumatera sites",
+                ].map((t, i) => (
+                  <li
+                    key={i}
+                    className="flex items-start gap-2 text-xs text-[#94A3B8]"
+                  >
+                    <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
+                    <span>{t}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {hideRaw && (
+        <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-5">
+          <h3 className="text-sm font-semibold text-white mb-2">
+            PMO Report — Summary
+          </h3>
+          <p className="text-xs text-[#94A3B8]">
+            Detailed report sections are hidden per your access level. Contact
+            your PMO for the full report.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

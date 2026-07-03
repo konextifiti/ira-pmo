@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { Geist, Geist_Mono } from "next/font/google"
 import Sidebar from "@/components/layout/Sidebar"
 import Header from "@/components/layout/Header"
+import { PermissionsProvider } from "@/lib/permissions/context"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -32,6 +33,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname()
   const title = pageTitles[pathname] || "AI·PMO"
+  const isLogin = pathname === "/login"
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
@@ -40,19 +42,25 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-[#0D1B2A] text-[#E2E8F0]">
-        <div className="flex min-h-full">
-          <Sidebar
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-          />
-          <div className="flex flex-col flex-1 ml-0 lg:ml-[220px]">
-            <Header
-              title={title}
-              onMenuClick={() => setSidebarOpen(true)}
-            />
-            <main className="flex-1 overflow-y-auto">{children}</main>
-          </div>
-        </div>
+        <PermissionsProvider>
+          {isLogin ? (
+            children
+          ) : (
+            <div className="flex min-h-full">
+              <Sidebar
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+              />
+              <div className="flex flex-col flex-1 ml-0 lg:ml-[220px]">
+                <Header
+                  title={title}
+                  onMenuClick={() => setSidebarOpen(true)}
+                />
+                <main className="flex-1 overflow-y-auto">{children}</main>
+              </div>
+            </div>
+          )}
+        </PermissionsProvider>
       </body>
     </html>
   )
