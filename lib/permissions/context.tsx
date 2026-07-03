@@ -33,7 +33,7 @@ function PermissionsProvider({ children }: { children: ReactNode }) {
     const supabase = createSupabaseBrowserClient()
 
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) {
+      if (!user?.email) {
         setValue({ user: null, loading: false })
         return
       }
@@ -41,7 +41,7 @@ function PermissionsProvider({ children }: { children: ReactNode }) {
       supabase
         .from("users")
         .select(`id, name, email, user_group_id, user_groups!inner(name, permissions)`)
-        .eq("id", user.id)
+        .eq("email", user.email)
         .single()
         .then(({ data }) => {
           if (!data) {

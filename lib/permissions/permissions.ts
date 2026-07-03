@@ -17,12 +17,12 @@ async function getUserPermissions(): Promise<UserPermission | null> {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (!user) return null
+  if (!user?.email) return null
 
   const { data: userData } = await supabase
     .from("users")
     .select(`id, name, email, user_group_id, user_groups!inner(name, permissions)`)
-    .eq("id", user.id)
+    .eq("email", user.email)
     .single()
 
   if (!userData) return null

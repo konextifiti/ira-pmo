@@ -9,14 +9,14 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/login" || pathname === "/") return supabaseResponse
 
-  if (!user) {
+  if (!user?.email) {
     return NextResponse.redirect(new URL("/login", request.url))
   }
 
   const { data: userData } = await supabase
     .from("users")
     .select("user_groups!inner(permissions)")
-    .eq("id", user.id)
+    .eq("email", user.email)
     .single()
 
   const groups = (userData as any)?.user_groups
