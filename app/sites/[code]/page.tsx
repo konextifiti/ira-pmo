@@ -110,7 +110,7 @@ export default async function SitePage({ params }: PageProps) {
       </div>
 
       {/* Pipeline Bar */}
-      <div className="flex items-center gap-0">
+      <div className="flex items-center gap-0 overflow-x-auto">
         {agentSteps.map((step, i) => {
           const done = stepDone(step.code)
           return (
@@ -150,7 +150,7 @@ export default async function SitePage({ params }: PageProps) {
 
         {/* Overview */}
         <TabsContent value="overview">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Site Config */}
             <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-4">
               <h3 className="text-sm font-semibold text-white mb-3">
@@ -350,7 +350,7 @@ function SiteTabContent({
   const gate = spvGateFn(run)
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Left: config/output */}
       <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-4">
         <h3 className="text-sm font-semibold text-white mb-3">{leftTitle}</h3>

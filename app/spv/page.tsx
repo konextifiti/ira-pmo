@@ -66,9 +66,9 @@ export default function SpvPage() {
     v >= 8 ? "bg-[#064E3B]" : v >= 6 ? "bg-[#451A03]" : "bg-[#450A0A]"
 
   return (
-    <div className="flex h-full">
+    <div className="flex flex-col lg:flex-row h-full">
       {/* Left panel */}
-      <div className="w-[280px] shrink-0 border-r border-[#1E3A5F] overflow-y-auto bg-[#0A1628]">
+      <div className="w-full lg:w-[280px] shrink-0 border-r border-[#1E3A5F] overflow-y-auto bg-[#0A1628]">
         <div className="p-3 border-b border-[#1E3A5F]">
           <h2 className="text-sm font-semibold text-white">SPV Queue</h2>
           <p className="text-xs text-[#64748B] mt-0.5">

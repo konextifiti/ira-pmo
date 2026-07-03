@@ -1,15 +1,25 @@
 "use client"
 
-import { Bell } from "lucide-react"
+import { Bell, Menu } from "lucide-react"
 
 interface HeaderProps {
   title: string
+  onMenuClick: () => void
 }
 
-export default function Header({ title }: HeaderProps) {
+export default function Header({ title, onMenuClick }: HeaderProps) {
   return (
     <header className="sticky top-0 z-20 flex h-[52px] items-center justify-between border-b border-[#1E3A5F] bg-[#0D1B2A] px-6 shrink-0">
-      <h1 className="text-base font-semibold text-white">{title}</h1>
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onMenuClick}
+          className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md text-[#64748B] hover:text-white hover:bg-[#1E3A5F] transition-colors"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+        <h1 className="text-base font-semibold text-white">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-5">
         {/* Live indicator */}

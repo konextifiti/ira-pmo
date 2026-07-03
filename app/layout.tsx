@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { usePathname } from "next/navigation"
 import { Geist, Geist_Mono } from "next/font/google"
 import Sidebar from "@/components/layout/Sidebar"
@@ -31,6 +32,7 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname()
   const title = pageTitles[pathname] || "AI·PMO"
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   return (
     <html
@@ -39,9 +41,15 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-[#0D1B2A] text-[#E2E8F0]">
         <div className="flex min-h-full">
-          <Sidebar />
-          <div className="flex flex-col flex-1 ml-[220px]">
-            <Header title={title} />
+          <Sidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
+          <div className="flex flex-col flex-1 ml-0 lg:ml-[220px]">
+            <Header
+              title={title}
+              onMenuClick={() => setSidebarOpen(true)}
+            />
             <main className="flex-1 overflow-y-auto">{children}</main>
           </div>
         </div>

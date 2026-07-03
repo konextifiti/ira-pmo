@@ -80,7 +80,7 @@ export default function TrackerPage() {
           />
         </div>
 
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex flex-wrap gap-2">
           {statuses.map((st) => (
             <button
               key={st}
@@ -122,7 +122,7 @@ export default function TrackerPage() {
 
       {/* Table view */}
       {view === "table" && (
-        <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] overflow-hidden">
+        <div className="overflow-x-auto rounded-lg border border-[#1E3A5F] bg-[#0A1628]">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#1E3A5F] text-xs text-[#64748B] uppercase">
@@ -193,7 +193,7 @@ export default function TrackerPage() {
 
       {/* Grid view */}
       {view === "grid" && (
-        <div className="grid grid-cols-10 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
           {filtered.map((s) => {
             const gc = gridColors[s.status] || {
               bg: "#1E293B",

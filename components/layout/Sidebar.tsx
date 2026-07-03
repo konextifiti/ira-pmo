@@ -9,6 +9,7 @@ import {
   Bot,
   FileText,
   ChevronRight,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -25,31 +26,60 @@ const navItems = [
   { href: "/reports", label: "Reports", icon: FileText },
 ]
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen: boolean
+  onClose: () => void
+}
+
+export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed top-0 left-0 z-30 flex h-full w-[220px] flex-col border-r border-[#1E3A5F] bg-[#0D1B2A]">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-5 h-14 border-b border-[#1E3A5F] shrink-0">
-        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-[#00D4D4] to-[#7c3aed] text-white text-xs font-bold">
-          AI
-        </div>
-        <span className="text-sm font-semibold text-white tracking-tight">
-          AI·PMO
-        </span>
-      </div>
+    <>
+      {/* Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      {/* Nav */}
-      <nav className="flex-1 flex flex-col gap-1 px-3 py-4 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href
-          const Icon = item.icon
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
+      <aside
+        className={cn(
+          "fixed top-0 left-0 z-50 flex h-full w-[220px] flex-col border-r border-[#1E3A5F] bg-[#0D1B2A] transition-transform duration-300 lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Logo + X */}
+        <div className="flex items-center justify-between gap-2 px-5 h-14 border-b border-[#1E3A5F] shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-[#00D4D4] to-[#7c3aed] text-white text-xs font-bold">
+              AI
+            </div>
+            <span className="text-sm font-semibold text-white tracking-tight">
+              AI·PMO
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden flex items-center justify-center w-7 h-7 rounded-md text-[#64748B] hover:text-white hover:bg-[#1E3A5F] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 flex flex-col gap-1 px-3 py-4 overflow-y-auto">
+          {navItems.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={onClose}
+                className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                 isActive
                   ? "bg-[#1E3A5F] text-white border-l-[3px] border-[#00D4D4] rounded-l-none"
@@ -90,5 +120,6 @@ export default function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   )
 }

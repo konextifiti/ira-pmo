@@ -77,7 +77,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-6 space-y-6">
       {/* Metric row */}
-      <div className="grid grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
         {[
           { label: "Total BTS", value: totalBts, color: "#00D4D4" },
           { label: "On Air", value: onAir, color: "#10B981" },
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* 3-column section */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Progress by Status */}
         <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-4">
           <h3 className="text-sm font-semibold text-white mb-4">
@@ -244,7 +244,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Regional row */}
-      <div className="grid grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         {regions.map((region) => {
           const count = regionBreakdown[region] || 0
           const pct = totalBts ? (count / totalBts) * 100 : 0

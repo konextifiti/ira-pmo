@@ -95,7 +95,7 @@ export default async function ReportsPage() {
       </div>
 
       {/* KPI Summary Panels */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {[
           { label: "GO Rate", value: goRate, color: "#10B981" },
           { label: "On Air", value: onAirPct, color: "#34D399" },
@@ -135,7 +135,7 @@ export default async function ReportsPage() {
         <h3 className="text-sm font-semibold text-white mb-4">
           PMO Report — Project IRA
         </h3>
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
             <h4 className="text-xs font-semibold text-[#00D4D4] mb-2 uppercase tracking-wider">
               Executive Summary
