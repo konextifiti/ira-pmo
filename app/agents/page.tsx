@@ -1,16 +1,8 @@
 import { supabase } from "@/lib/supabase"
 
-const agentMeta: Record<
-  string,
-  { bg: string; code: string; label: string }
-> = {
-  A1: { bg: "#1A3A5C", code: "A1", label: "Transport Access Lead" },
-  A2: { bg: "#7D3C98", code: "A2", label: "Transport Design Engineer" },
-  A3: { bg: "#148F77", code: "A3", label: "Network Verification & Remote Access Engineer" },
-  A4: { bg: "#BA7517", code: "A4", label: "Vendor & Contract Specialist" },
-  A5: { bg: "#1A5276", code: "A5", label: "Integration & Pre-Test Engineer" },
-  A6: { bg: "#E67E22", code: "A6", label: "Field & Civil Coordinator" },
-  A7: { bg: "#C0392B", code: "A7", label: "PMO & Documentation Controller" },
+const AGENT_COLORS: Record<string, string> = {
+  A1: "#1A3A5C", A2: "#7D3C98", A3: "#148F77", A4: "#BA7517",
+  A5: "#1A5276", A6: "#E67E22", A7: "#C0392B",
 }
 
 export default async function AgentsPage() {
@@ -30,11 +22,8 @@ export default async function AgentsPage() {
         {agents.map((agent: any) => {
           const at = agent.agent_types
           const code = at?.code || "??"
-          const meta = agentMeta[code] || {
-            bg: "#1E293B",
-            code,
-            label: at?.name || "Unknown",
-          }
+          const color = AGENT_COLORS[code] || "#1E293B"
+          const label = at?.name || "Unknown"
           const domain = at?.domain || "—"
           const pic = agent.users?.name || "—"
           const runs = agent.agent_runs || []
@@ -60,13 +49,13 @@ export default async function AgentsPage() {
               <div className="flex items-center gap-3 mb-3">
                 <span
                   className="h-7 min-w-7 rounded flex items-center justify-center text-xs font-bold text-white"
-                  style={{ backgroundColor: meta.bg }}
+                  style={{ backgroundColor: color }}
                 >
                   {code}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium text-white truncate">
-                    {meta.label}
+                    {label}
                   </div>
                   <div className="text-[10px] text-[#64748B] truncate">
                     {domain}
@@ -124,7 +113,7 @@ export default async function AgentsPage() {
                     className="h-full rounded-full transition-all"
                     style={{
                       width: `${approvalRate}%`,
-                      backgroundColor: meta.bg,
+                      backgroundColor: color,
                     }}
                   />
                 </div>

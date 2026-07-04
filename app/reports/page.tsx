@@ -2,15 +2,13 @@ import { supabase } from "@/lib/supabase"
 import { getUserPermissions, getModuleVisibility } from "@/lib/permissions/permissions"
 import { shouldHideRawData } from "@/lib/permissions/dataGate"
 
-const weeks = [
-  { label: "W22", value: 12 },
-  { label: "W23", value: 18 },
-  { label: "W24", value: 24 },
-  { label: "W25", value: 32 },
-  { label: "W26", value: 40 },
-]
-
-const maxVal = Math.max(...weeks.map((w) => w.value))
+function getWeekLabel(dateStr: string): string {
+  const d = new Date(dateStr)
+  const start = new Date(d.getFullYear(), 0, 1)
+  const diff = (d.getTime() - start.getTime()) / 86400000
+  const week = Math.ceil((diff + start.getDay() + 1) / 7)
+  return `W${week}`
+}
 
 export default async function ReportsPage() {
   const userPerms = await getUserPermissions()
@@ -18,16 +16,26 @@ export default async function ReportsPage() {
   const visibility = perms ? getModuleVisibility("reports", perms) : "all"
   const hideRaw = shouldHideRawData(visibility)
 
-  const [{ data: sites }, { data: kpis }, { data: verdicts }] =
-    await Promise.all([
-      supabase.from("project_sites_approved").select("status, region"),
-      supabase.from("kpi_reports").select("go_no_go"),
-      supabase.from("spv_verdicts").select("verdict"),
-    ])
+  const [
+    { data: sites },
+    { data: kpis },
+    { data: verdicts },
+    { data: runs },
+    { data: blockedSites },
+    { data: pretestSites },
+  ] = await Promise.all([
+    supabase.from("project_sites_approved").select("status, region, site_code"),
+    supabase.from("kpi_reports").select("go_no_go"),
+    supabase.from("spv_verdicts").select("verdict"),
+    supabase.from("agent_runs").select("created_at"),
+    supabase.from("project_sites_approved").select("site_code, metadata").eq("status", "Blocked"),
+    supabase.from("project_sites_approved").select("site_code").eq("status", "Pre-Test Pass"),
+  ])
 
   const siteList = (sites as any[]) || []
   const kpiList = (kpis as any[]) || []
   const verdictList = (verdicts as any[]) || []
+  const runsList = (runs as any[]) || []
 
   const total = siteList.length
   const onAir = siteList.filter((s: any) => s.status === "On Air").length
@@ -53,6 +61,24 @@ export default async function ReportsPage() {
   const onAirPct = total ? Math.round((onAir / total) * 100) : 0
   const integrationPct = total ? Math.round((integration / total) * 100) : 0
   const blockedPct = total ? Math.round((blocked / total) * 100) : 0
+
+  // Compute weekly chart data from agent_runs
+  const weekMap: Record<string, number> = {}
+  runsList.forEach((r: any) => {
+    const label = getWeekLabel(r.created_at)
+    weekMap[label] = (weekMap[label] || 0) + 1
+  })
+  const sortedWeeks = Object.entries(weekMap).sort(([a], [b]) => a.localeCompare(b))
+  const weeks = sortedWeeks.slice(-5).map(([label, value]) => ({ label, value }))
+  const maxVal = weeks.length ? Math.max(...weeks.map((w) => w.value)) : 1
+
+  // Region counts for executive summary
+  const regionSet = new Set(siteList.map((s: any) => s.region))
+  const regionCount = regionSet.size
+  const topRegions = [...regionSet].slice(0, 2).join(" and ")
+
+  const blockedItems = (blockedSites as any[]) || []
+  const pretestItems = (pretestSites as any[]) || []
 
   return (
     <div className="p-6 space-y-6">
@@ -85,7 +111,7 @@ export default async function ReportsPage() {
       {/* Weekly Progress Bar Chart */}
       <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-4">
         <h3 className="text-sm font-semibold text-white mb-4">
-          Weekly Active Sites (W22-W26)
+          Agent Runs per Week ({weeks[0]?.label || "—"}–{weeks[weeks.length - 1]?.label || "—"})
         </h3>
         <div className="flex items-end gap-3 h-40">
           {weeks.map((w) => {
@@ -156,57 +182,67 @@ export default async function ReportsPage() {
                 Executive Summary
               </h4>
               <p className="text-xs text-[#94A3B8] leading-relaxed">
-                Project IRA (Nokia 5G SA) has achieved 40% overall completion
-                across 100 sites in 7 regions. On Air delivery stands at 32% with
-                strong momentum in Jawa and DKI Jakarta. Integration pipeline
-                remains healthy at 24%, while 8 sites are currently blocked
-                awaiting transport clearance. SPV approval rate is at 78%,
-                indicating consistent quality across agent outputs. The project is
-                on track to meet the Q3 milestone target of 60% completion.
+                Project IRA (Nokia 5G SA) covers {total} sites across {regionCount} regions. On Air delivery stands at {onAir} sites ({onAirPct}%), with strong momentum in {topRegions}. Integration pipeline is at {integration} sites ({integrationPct}%), while {blocked} sites are currently blocked. SPV approval rate is at {spvApprovalRate}%, indicating consistent quality across agent outputs. GO count stands at {goCount}, reflecting {goRate}% GO rate across KPI reports.
               </p>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-[#F59E0B] mb-2 uppercase tracking-wider">
                 Risk Register
               </h4>
-              <ul className="space-y-2">
-                {[
-                  "Transport delivery delays in Sumatera and Kalimantan regions affecting 12 sites",
-                  "RBS vendor procurement backlog — 5 sites awaiting equipment allocation",
-                  "SPV queue bottleneck: 22 evaluations pending review, avg wait 3.2 days",
-                  "Agent A4 (Config Auditor) showing 15% lower throughput vs target SLA",
-                ].map((r, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-xs text-[#94A3B8]"
-                  >
+                <ul className="space-y-2">
+                  {blockedItems.length > 0
+                    ? blockedItems.slice(0, 4).map((s: any, i: number) => {
+                        const vendor = s.metadata?.tp_vendor || "unknown vendor"
+                        return (
+                          <li
+                            key={i}
+                            className="flex items-start gap-2 text-xs text-[#94A3B8]"
+                          >
+                            <span className="text-[#F87171] mt-0.5 shrink-0">•</span>
+                            <span>{s.site_code} blocked — awaiting {vendor}</span>
+                          </li>
+                        )
+                      })
+                    : (
+                      <li className="flex items-start gap-2 text-xs text-[#94A3B8]">
+                        <span className="text-[#10B981] mt-0.5 shrink-0">•</span>
+                        <span>No blocked sites currently.</span>
+                      </li>
+                    )}
+                  <li className="flex items-start gap-2 text-xs text-[#94A3B8]">
                     <span className="text-[#F87171] mt-0.5 shrink-0">•</span>
-                    <span>{r}</span>
+                    <span>SPV queue: {verdictList.filter((v: any) => v.verdict !== "APPROVED").length} evaluations pending review.</span>
                   </li>
-                ))}
-              </ul>
+                </ul>
             </div>
             <div>
               <h4 className="text-xs font-semibold text-[#10B981] mb-2 uppercase tracking-wider">
                 Next Week Targets
               </h4>
-              <ul className="space-y-2">
-                {[
-                  "On Air: 8 sites in Jawa and DKI Jakarta",
-                  "Integration: Complete 12 sites across Banten and Sumatera",
-                  "SPV: Clear 15 pending evaluations from current queue",
-                  "Agent A4: Reprovision config auditor for improved throughput",
-                  "Transport: Resolve delivery blockers for 5 Sumatera sites",
-                ].map((t, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-xs text-[#94A3B8]"
-                  >
-                    <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
-                    <span>{t}</span>
-                  </li>
-                ))}
-              </ul>
+                <ul className="space-y-2">
+                  {pretestItems.length > 0 ? (
+                    pretestItems.slice(0, 4).map((s: any, i: number) => (
+                      <li
+                        key={i}
+                        className="flex items-start gap-2 text-xs text-[#94A3B8]"
+                      >
+                        <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
+                        <span>{s.site_code} — Pre-Test Pass, ready for integration.</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="flex items-start gap-2 text-xs text-[#94A3B8]">
+                      <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
+                      <span>No Pre-Test Pass sites currently queued.</span>
+                    </li>
+                  )}
+                  {pretestItems.length > 4 && (
+                    <li className="flex items-start gap-2 text-xs text-[#94A3B8]">
+                      <span className="text-[#10B981] mt-0.5 shrink-0">→</span>
+                      <span>... and {pretestItems.length - 4} more sites ready for integration.</span>
+                    </li>
+                  )}
+                </ul>
             </div>
           </div>
         </div>

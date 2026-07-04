@@ -14,20 +14,10 @@ const statusColors: Record<string, string> = {
   Blocked: "#F87171",
 }
 
-const regions = [
-  "Jawa",
-  "DKI Jakarta",
-  "Banten",
-  "Sumatera",
-  "Sulawesi",
-  "Kalimantan",
-  "Bali",
-]
-
 export default async function DashboardPage() {
   const [{ data: sites }, { data: agents }, { count: spvCount }] =
     await Promise.all([
-      supabase.from("project_sites_approved").select("status, metadata"),
+      supabase.from("project_sites_approved").select("status, region, metadata"),
       supabase
         .from("project_agents")
         .select(
@@ -45,7 +35,6 @@ export default async function DashboardPage() {
     .eq("type", "GO")
 
   const statusBreakdown: Record<string, number> = {}
-  const regionBreakdown: Record<string, number> = {}
   let totalBts = 0
   let onAir = 0
   let integrationDone = 0
@@ -61,12 +50,19 @@ export default async function DashboardPage() {
     if (s === "Integration Done") integrationDone++
     if (s === "Integration Ongoing") integrationOngoing++
     if (s === "Blocked") blocked++
-
-    const region = site.metadata?.region
-    if (region && regions.includes(region)) {
-      regionBreakdown[region] = (regionBreakdown[region] || 0) + 1
-    }
   })
+
+  const regionCounts = (sites ?? []).reduce((acc, s: any) => {
+    const r = s.region || "Unknown"
+    acc[r] = acc[r] || { total: 0, onAir: 0, blocked: 0 }
+    acc[r].total++
+    if (s.status === "On Air") acc[r].onAir++
+    if (s.status === "Blocked") acc[r].blocked++
+    return acc
+  }, {} as Record<string, { total: number; onAir: number; blocked: number }>)
+  const sortedRegions = Object.entries(regionCounts).sort(
+    (a, b) => b[1].total - a[1].total
+  )
 
   const totalIntegration = integrationDone + integrationOngoing
 
@@ -245,19 +241,24 @@ export default async function DashboardPage() {
 
       {/* Regional row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        {regions.map((region) => {
-          const count = regionBreakdown[region] || 0
-          const pct = totalBts ? (count / totalBts) * 100 : 0
+        {sortedRegions.map(([region, r]) => {
+          const pct = totalBts ? (r.total / totalBts) * 100 : 0
           return (
             <div
               key={region}
               className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-3 text-center"
             >
-              <div className="text-lg font-bold text-white">{count}</div>
+              <div className="text-lg font-bold text-white">{r.total}</div>
               <div className="text-[10px] text-[#64748B] mt-0.5">
                 {region}
               </div>
-              <div className="mt-2 h-1 rounded-full bg-[#1E3A5F] overflow-hidden">
+              <div className="flex justify-center gap-2 text-[10px] text-[#64748B] mt-1">
+                <span className="text-[#10B981]">{r.onAir} on-air</span>
+                {r.blocked > 0 && (
+                  <span className="text-[#F87171]">{r.blocked} blk</span>
+                )}
+              </div>
+              <div className="mt-1 h-1 rounded-full bg-[#1E3A5F] overflow-hidden">
                 <div
                   className="h-full rounded-full bg-[#00D4D4] transition-all"
                   style={{ width: `${pct}%` }}

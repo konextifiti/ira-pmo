@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -13,6 +14,7 @@ import {
   X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { supabase } from "@/lib/supabase"
 import { usePermissions } from "@/lib/permissions/usePermissions"
 
 interface NavItem {
@@ -40,6 +42,15 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname()
   const { user, loading, canAccess } = usePermissions()
+  const [spvCount, setSpvCount] = useState(0)
+
+  useEffect(() => {
+    supabase
+      .from("spv_evaluations")
+      .select("*", { count: "exact", head: true })
+      .eq("auto_recommendation", "AUTO_APPROVE_CANDIDATE")
+      .then(({ count }) => setSpvCount(count ?? 0))
+  }, [])
 
   const navItems = allNavItems.filter(
     (item) => loading || canAccess(item.moduleKey)
@@ -96,9 +107,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 <span className="flex-1">{item.label}</span>
-                {item.badge && (
+                {item.badge && spvCount > 0 && (
                   <span className="h-5 min-w-5 flex items-center justify-center rounded-full bg-[#7c3aed] text-[10px] font-bold text-white px-1.5">
-                    NEW
+                    {spvCount}
                   </span>
                 )}
               </Link>
