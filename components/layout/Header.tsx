@@ -1,9 +1,10 @@
 "use client"
 
-import { Bell, LogOut, Menu } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { usePermissions } from "@/lib/permissions/usePermissions"
 import { createSupabaseBrowserClient } from "@/lib/supabase/client"
+import NotificationBell from "./NotificationBell"
 
 interface HeaderProps {
   title: string
@@ -48,15 +49,7 @@ export default function Header({ title, onMenuClick }: HeaderProps) {
           <span className="text-xs font-medium text-[#10B981]">Live</span>
         </div>
 
-        <button
-          type="button"
-          className="relative flex items-center justify-center w-8 h-8 rounded-md hover:bg-[#1E3A5F]/50 transition-colors"
-        >
-          <Bell className="w-4 h-4 text-[#64748B]" />
-          <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 flex items-center justify-center rounded-full bg-[#F59E0B] text-[10px] font-bold text-white px-1">
-            3
-          </span>
-        </button>
+        <NotificationBell />
 
         <button
           type="button"
