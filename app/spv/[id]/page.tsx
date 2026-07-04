@@ -46,9 +46,11 @@ interface EvalDetail {
     }[]
     verify_evidence: {
       id: number
-      file_url: string
-      file_type: string
-      notes: string
+      verification_result: string
+      evidence_summary: string
+      ptp_sync_status: string
+      rework_required: boolean
+      failed_items: any
       created_at: string
     }[]
   }
@@ -106,7 +108,7 @@ export default function SpvDetailPage() {
            project_agents(agent_types(code, name)),
            project_sites(site_code, name),
            spv_verdicts(id, verdict, revision_notes, created_at),
-           verify_evidence(id, file_url, file_type, notes, created_at)
+           verify_evidence(id, verification_result, evidence_summary, ptp_sync_status, rework_required, failed_items, created_at)
          )`
       )
       .eq("id", id)
@@ -357,29 +359,41 @@ export default function SpvDetailPage() {
           <h2 className="text-sm font-semibold text-white mb-4">
             Evidence ({evidence.length})
           </h2>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {evidence.map((ev) => (
               <div
                 key={ev.id}
-                className="flex items-center justify-between rounded bg-[#1E3A5F]/40 p-3 text-xs"
+                className="rounded bg-[#1E3A5F]/40 p-3 text-xs space-y-2"
               >
-                <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="h-5 rounded px-1.5 bg-[#00D4D4]/20 text-[10px] font-bold text-[#00D4D4] flex items-center shrink-0">
-                    {ev.file_type || "FILE"}
+                    {ev.verification_result || "VERIFIED"}
                   </span>
-                  <span className="text-[#94A3B8] truncate">
-                    {ev.notes || ev.file_url || "—"}
-                  </span>
+                  {ev.rework_required && (
+                    <span className="h-5 rounded px-1.5 bg-[#450A0A] text-[10px] font-bold text-[#F87171] flex items-center shrink-0">
+                      REWORK
+                    </span>
+                  )}
+                  {ev.ptp_sync_status && (
+                    <span className="text-[#64748B] font-mono">
+                      Sync: {ev.ptp_sync_status}
+                    </span>
+                  )}
                 </div>
-                {ev.file_url && (
-                  <a
-                    href={ev.file_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[#00D4D4] hover:underline shrink-0 ml-2"
-                  >
-                    View
-                  </a>
+                {ev.evidence_summary && (
+                  <p className="text-[#94A3B8] leading-relaxed">
+                    {ev.evidence_summary}
+                  </p>
+                )}
+                {ev.failed_items && Array.isArray(ev.failed_items) && ev.failed_items.length > 0 && (
+                  <div>
+                    <span className="text-[#F87171] text-[10px] font-semibold">Failed Items:</span>
+                    <ul className="list-disc list-inside text-[#94A3B8] mt-1 space-y-0.5">
+                      {ev.failed_items.map((item: string, i: number) => (
+                        <li key={i}>{typeof item === "string" ? item : JSON.stringify(item)}</li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
             ))}
