@@ -38,12 +38,15 @@ export default function TrackerPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [view, setView] = useState<"table" | "grid">("table")
-  const { getVisibility, ownedSiteIds } = usePermissions()
+  const [dataLoading, setDataLoading] = useState(true)
+  const { getVisibility, ownedSiteIds, loading: permLoading } = usePermissions()
 
   const visibility = getVisibility("bts_tracker")
   const { showAggregateOnly, domainFilter } = getDataVisibility(visibility, "bts_tracker")
 
   useEffect(() => {
+    if (permLoading) return
+    setDataLoading(true)
     supabase
       .from("project_sites")
       .select("id, site_code, name, region, status, metadata, kpi_reports(go_no_go)")
@@ -56,8 +59,9 @@ export default function TrackerPage() {
           }
           setSites(result)
         }
+        setDataLoading(false)
       })
-  }, [domainFilter, ownedSiteIds])
+  }, [domainFilter, ownedSiteIds, permLoading])
 
   const statuses = ["All", ...new Set(sites.map((s) => s.status))]
 
@@ -74,6 +78,35 @@ export default function TrackerPage() {
   const goLabel = (s: Site) => {
     const kr = s.kpi_reports?.[0]
     return kr?.go_no_go || "—"
+  }
+
+  if (permLoading || dataLoading) {
+    return (
+      <div className="p-6 space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="h-9 w-64 rounded-md bg-[#1E3A5F] animate-pulse" />
+          <div className="h-7 w-20 rounded-md bg-[#1E3A5F] animate-pulse" />
+          <div className="h-7 w-20 rounded-md bg-[#1E3A5F] animate-pulse" />
+          <div className="h-7 w-20 rounded-md bg-[#1E3A5F] animate-pulse ml-auto" />
+        </div>
+        <div className="rounded-lg border border-[#1E3A5F] bg-[#0A1628] p-6">
+          <div className="space-y-3">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-4 w-24 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-32 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-20 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-28 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-16 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-20 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-16 rounded bg-[#1E3A5F] animate-pulse" />
+                <div className="h-4 w-12 rounded bg-[#1E3A5F] animate-pulse ml-auto" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (showAggregateOnly) {

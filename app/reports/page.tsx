@@ -13,6 +13,11 @@ const weeks = [
 const maxVal = Math.max(...weeks.map((w) => w.value))
 
 export default async function ReportsPage() {
+  const userPerms = await getUserPermissions()
+  const perms = userPerms?.permissions
+  const visibility = perms ? getModuleVisibility("reports", perms) : "all"
+  const hideRaw = shouldHideRawData(visibility)
+
   const [{ data: sites }, { data: kpis }, { data: verdicts }] =
     await Promise.all([
       supabase.from("project_sites").select("status, region"),
@@ -48,11 +53,6 @@ export default async function ReportsPage() {
   const onAirPct = total ? Math.round((onAir / total) * 100) : 0
   const integrationPct = total ? Math.round((integration / total) * 100) : 0
   const blockedPct = total ? Math.round((blocked / total) * 100) : 0
-
-  const userPerms = await getUserPermissions()
-  const perms = userPerms?.permissions
-  const visibility = perms ? getModuleVisibility("reports", perms) : "all"
-  const hideRaw = shouldHideRawData(visibility)
 
   return (
     <div className="p-6 space-y-6">

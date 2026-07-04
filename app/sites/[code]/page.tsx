@@ -22,6 +22,13 @@ interface PageProps {
 export default async function SitePage({ params }: PageProps) {
   const { code } = await params
 
+  const userPerms = await getUserPermissions()
+  const perms = userPerms?.permissions
+  const siteVisibility = perms ? getModuleVisibility("site_detail", perms) : "all"
+  const hideRaw = shouldHideRawData(siteVisibility)
+  const domains = perms ? getEffectiveDomains(perms) : ["all"]
+  const ownedSiteIds = await getUserOwnedSiteIds()
+
   const { data: site, error } = await supabase
     .from("project_sites")
     .select("*")
@@ -30,12 +37,6 @@ export default async function SitePage({ params }: PageProps) {
 
   if (error || !site) notFound()
 
-  const userPerms = await getUserPermissions()
-  const perms = userPerms?.permissions
-  const siteVisibility = perms ? getModuleVisibility("site_detail", perms) : "all"
-  const hideRaw = shouldHideRawData(siteVisibility)
-  const domains = perms ? getEffectiveDomains(perms) : ["all"]
-  const ownedSiteIds = await getUserOwnedSiteIds()
   const restricted =
     (siteVisibility === "own_scope" || siteVisibility === "domain_scope") &&
     !ownedSiteIds.includes(site.id)
