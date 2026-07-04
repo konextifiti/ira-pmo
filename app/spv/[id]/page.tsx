@@ -42,7 +42,6 @@ interface EvalDetail {
       id: number
       verdict: string
       revision_notes: string
-      notes: string
       created_at: string
     }[]
     verify_evidence: {
@@ -106,7 +105,7 @@ export default function SpvDetailPage() {
            id, msg_id, status, created_at, ai_output,
            project_agents(agent_types(code, name)),
            project_sites(site_code, name),
-           spv_verdicts(id, verdict, revision_notes, notes, created_at),
+           spv_verdicts(id, verdict, revision_notes, created_at),
            verify_evidence(id, file_url, file_type, notes, created_at)
          )`
       )
@@ -280,9 +279,9 @@ export default function SpvDetailPage() {
               </span>
             )}
           </div>
-          {(latestVerdict.notes || latestVerdict.revision_notes) && (
+          {latestVerdict.revision_notes && (
             <div className="rounded bg-[#1E3A5F]/40 p-3 text-xs text-[#94A3B8] leading-relaxed">
-              {latestVerdict.notes || latestVerdict.revision_notes}
+              {latestVerdict.revision_notes}
             </div>
           )}
         </div>
