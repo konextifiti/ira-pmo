@@ -20,7 +20,7 @@ export default async function ReportsPage() {
 
   const [{ data: sites }, { data: kpis }, { data: verdicts }] =
     await Promise.all([
-      supabase.from("project_sites").select("status, region"),
+      supabase.from("project_sites_approved").select("status, region"),
       supabase.from("kpi_reports").select("go_no_go"),
       supabase.from("spv_verdicts").select("verdict"),
     ])

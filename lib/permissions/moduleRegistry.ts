@@ -55,6 +55,12 @@ const MODULE_REGISTRY: ModuleMeta[] = [
     route: "/reports",
     domainTags: ["all"],
   },
+  {
+    key: "approval_queue",
+    label: "Approval Queue",
+    route: "/approvals",
+    domainTags: ["all"],
+  },
 ]
 
 const MODULE_MAP = new Map<string, ModuleMeta>(

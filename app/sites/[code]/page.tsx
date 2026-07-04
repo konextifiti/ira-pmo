@@ -4,6 +4,7 @@ import StatusBadge from "@/components/ui/StatusBadge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { getUserPermissions, getModuleVisibility, getEffectiveDomains, getUserOwnedSiteIds } from "@/lib/permissions/permissions"
 import { shouldHideRawData } from "@/lib/permissions/dataGate"
+import ProposeChangeButton from "@/components/sites/ProposeChangeButton"
 
 const agentSteps = [
   { code: "A2", label: "Design" },
@@ -30,16 +31,32 @@ export default async function SitePage({ params }: PageProps) {
   const ownedSiteIds = await getUserOwnedSiteIds()
 
   const { data: site, error } = await supabase
-    .from("project_sites")
+    .from("project_sites_approved")
     .select("*")
     .eq("site_code", code)
     .single()
+
+  // Check for pending changes from raw table
+  const { data: pendingRow } = await supabase
+    .from("project_sites")
+    .select("pending_changes, approval_status")
+    .eq("site_code", code)
+    .single()
+
+  const hasPendingChanges = pendingRow?.pending_changes != null
 
   if (error || !site) notFound()
 
   const restricted =
     (siteVisibility === "own_scope" || siteVisibility === "domain_scope") &&
     !ownedSiteIds.includes(site.id)
+
+  const userTier = perms?.tier ?? ""
+  const canProposeChange =
+    ownedSiteIds.includes(site.id) ||
+    userTier === "PMO" ||
+    userTier === "ADMIN" ||
+    userTier === "SUPERADMIN"
 
   if (restricted) {
     return (
@@ -106,6 +123,11 @@ export default async function SitePage({ params }: PageProps) {
               {site.site_code}
             </h1>
             <StatusBadge status={site.status} />
+            {hasPendingChanges && (
+              <span className="inline-flex h-5 items-center rounded px-1.5 text-[10px] font-medium bg-[#451A03] text-[#FBBF24]">
+                Pending approval
+              </span>
+            )}
             {goReport && (
               <span
                 className={`inline-flex h-5 items-center rounded px-1.5 text-[10px] font-medium ${
@@ -124,6 +146,14 @@ export default async function SitePage({ params }: PageProps) {
           </p>
         </div>
         <div className="flex gap-2">
+          {canProposeChange && (
+            <ProposeChangeButton
+              siteId={site.id}
+              siteCode={site.site_code}
+              currentStatus={site.status}
+              hasPendingChanges={hasPendingChanges}
+            />
+          )}
           <button
             type="button"
             className="h-8 rounded-md border border-[#1E3A5F] bg-[#0A1628] px-3 text-xs font-medium text-[#94A3B8] hover:bg-[#1E3A5F]/50 transition-colors"

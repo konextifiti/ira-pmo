@@ -25,12 +25,19 @@ function usePermissions(): UsePermissionsReturn {
     return {
       user,
       loading,
-      canAccess: (moduleKey: string) =>
-        perms?.modules[moduleKey]?.access === true,
+      canAccess: (moduleKey: string) => {
+        if (moduleKey === "approval_queue") {
+          return perms?.tier === "PMO" || perms?.tier === "ADMIN" || perms?.tier === "SUPERADMIN"
+        }
+        return perms?.modules[moduleKey]?.access === true
+      },
       getVisibility: (moduleKey: string): ModuleVisibility =>
         perms?.modules[moduleKey]?.visibility ?? "all",
       canAccessRoute: (route: string) => {
         if (!perms) return true
+        if (route === "/approvals" || route.startsWith("/approvals")) {
+          return perms.tier === "PMO" || perms.tier === "ADMIN" || perms.tier === "SUPERADMIN"
+        }
         for (const [key, config] of Object.entries(perms.modules)) {
           const meta = MODULE_MAP.get(key)
           if (meta && route.startsWith(meta.route)) {

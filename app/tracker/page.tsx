@@ -47,8 +47,8 @@ export default function TrackerPage() {
   useEffect(() => {
     if (permLoading) return
     setDataLoading(true)
-    supabase
-      .from("project_sites")
+      supabase
+      .from("project_sites_approved")
       .select("id, site_code, name, region, status, metadata, kpi_reports(go_no_go)")
       .order("site_code")
       .then(({ data }) => {

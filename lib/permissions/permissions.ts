@@ -52,6 +52,9 @@ function getModuleConfig(
 }
 
 function canAccessModule(moduleKey: string, permissions: PermissionJson): boolean {
+  if (moduleKey === "approval_queue") {
+    return permissions.tier === "PMO" || permissions.tier === "ADMIN" || permissions.tier === "SUPERADMIN"
+  }
   return getModuleConfig(moduleKey, permissions)?.access === true
 }
 
@@ -59,10 +62,14 @@ function getModuleVisibility(
   moduleKey: string,
   permissions: PermissionJson
 ): ModuleVisibility {
+  if (moduleKey === "approval_queue") return "all"
   return getModuleConfig(moduleKey, permissions)?.visibility ?? "all"
 }
 
 function canAccessRoute(route: string, permissions: PermissionJson): boolean {
+  if (route === "/approvals" || route.startsWith("/approvals")) {
+    return permissions.tier === "PMO" || permissions.tier === "ADMIN" || permissions.tier === "SUPERADMIN"
+  }
   for (const [key, config] of Object.entries(permissions.modules)) {
     const meta = MODULE_MAP.get(key)
     if (meta && route.startsWith(meta.route)) {

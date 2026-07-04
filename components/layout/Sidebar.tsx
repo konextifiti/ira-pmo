@@ -8,6 +8,7 @@ import {
   ShieldHalf,
   Bot,
   FileText,
+  ClipboardCheck,
   ChevronRight,
   X,
 } from "lucide-react"
@@ -25,6 +26,7 @@ interface NavItem {
 const allNavItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, moduleKey: "dashboard" },
   { href: "/tracker", label: "BTS Tracker", icon: Radio, moduleKey: "bts_tracker" },
+  { href: "/approvals", label: "Approval Queue", icon: ClipboardCheck, moduleKey: "approval_queue" },
   { href: "/spv", label: "SPV Queue", icon: ShieldHalf, badge: true, moduleKey: "spv_queue" },
   { href: "/agents", label: "Agent Monitor", icon: Bot, moduleKey: "agent_monitor" },
   { href: "/reports", label: "Reports", icon: FileText, moduleKey: "reports" },

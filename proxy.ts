@@ -27,6 +27,9 @@ export async function proxy(request: NextRequest) {
   if (!permissions?.modules) return supabaseResponse
 
   const denied = MODULE_REGISTRY.some((m) => {
+    if (m.key === "approval_queue" && (pathname === "/approvals" || pathname.startsWith("/approvals/"))) {
+      return permissions.tier !== "PMO" && permissions.tier !== "ADMIN" && permissions.tier !== "SUPERADMIN"
+    }
     if (pathname === m.route) {
       return permissions.modules[m.key]?.access !== true
     }

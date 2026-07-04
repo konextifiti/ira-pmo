@@ -27,7 +27,7 @@ const regions = [
 export default async function DashboardPage() {
   const [{ data: sites }, { data: agents }, { count: spvCount }] =
     await Promise.all([
-      supabase.from("project_sites").select("status, metadata"),
+      supabase.from("project_sites_approved").select("status, metadata"),
       supabase
         .from("project_agents")
         .select(

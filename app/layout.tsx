@@ -21,6 +21,7 @@ const geistMono = Geist_Mono({
 const pageTitles: Record<string, string> = {
   "/dashboard": "Dashboard",
   "/tracker": "BTS Tracker",
+  "/approvals": "Approval Queue",
   "/spv": "SPV Queue",
   "/agents": "Agent Monitor",
   "/reports": "Reports",
