@@ -2,8 +2,8 @@ import { supabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { getUserPermissions, getModuleVisibility, getEffectiveDomains } from "@/lib/permissions/permissions"
-import { shouldHideRawData, domainMatch } from "@/lib/permissions/dataGate"
+import { getUserPermissions, getModuleVisibility, getEffectiveDomains, getUserOwnedSiteIds } from "@/lib/permissions/permissions"
+import { shouldHideRawData } from "@/lib/permissions/dataGate"
 
 const agentSteps = [
   { code: "A2", label: "Design" },
@@ -35,7 +35,10 @@ export default async function SitePage({ params }: PageProps) {
   const siteVisibility = perms ? getModuleVisibility("site_detail", perms) : "all"
   const hideRaw = shouldHideRawData(siteVisibility)
   const domains = perms ? getEffectiveDomains(perms) : ["all"]
-  const restricted = siteVisibility === "own_scope" && !domainMatch(site.region, domains)
+  const ownedSiteIds = await getUserOwnedSiteIds()
+  const restricted =
+    (siteVisibility === "own_scope" || siteVisibility === "domain_scope") &&
+    !ownedSiteIds.includes(site.id)
 
   if (restricted) {
     return (

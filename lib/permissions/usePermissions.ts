@@ -11,6 +11,7 @@ interface UsePermissionsReturn {
   getVisibility: (moduleKey: string) => ModuleVisibility
   canAccessRoute: (route: string) => boolean
   domains: string[]
+  ownedSiteIds: number[]
   isTier: (tier: string) => boolean
   permissions: PermissionJson | null
 }
@@ -39,6 +40,7 @@ function usePermissions(): UsePermissionsReturn {
         return true
       },
       domains: perms?.domains ?? [],
+      ownedSiteIds: user?.ownedSiteIds ?? [],
       isTier: (tier: string) => perms?.tier === tier,
       permissions: perms,
     }

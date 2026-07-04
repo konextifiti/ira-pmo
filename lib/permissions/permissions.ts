@@ -76,6 +76,41 @@ function getEffectiveDomains(permissions: PermissionJson): string[] {
   return permissions.domains
 }
 
+async function getUserOwnedSiteIds(): Promise<number[]> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user?.email) return []
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", user.email)
+    .single()
+
+  if (!userData) return []
+
+  const { data: projectAgents } = await supabase
+    .from("project_agents")
+    .select("id")
+    .eq("pic_user_id", userData.id)
+
+  if (!projectAgents || projectAgents.length === 0) return []
+
+  const agentIds = projectAgents.map((pa) => pa.id)
+
+  const { data: agentRuns } = await supabase
+    .from("agent_runs")
+    .select("site_id")
+    .in("project_agent_id", agentIds)
+
+  if (!agentRuns) return []
+
+  return [...new Set(agentRuns.map((ar) => ar.site_id))]
+}
+
 export {
   getUserPermissions,
   getModuleConfig,
@@ -83,4 +118,5 @@ export {
   getModuleVisibility,
   canAccessRoute,
   getEffectiveDomains,
+  getUserOwnedSiteIds,
 }

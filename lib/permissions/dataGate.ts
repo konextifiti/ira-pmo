@@ -1,18 +1,12 @@
 import type { ModuleVisibility } from "./moduleRegistry"
 
-function domainMatch(siteRegion: string | undefined, userDomains: string[]): boolean {
-  if (userDomains.length === 0) return false
-  if (userDomains.includes("all")) return true
-  const tag = (siteRegion ?? "").toLowerCase()
-  return userDomains.some((d) => tag.includes(d) || d.includes(tag))
-}
-
-function filterSitesByDomain<T extends { region?: string }>(
+function filterSitesByOwnedIds<T extends { id: number }>(
   sites: T[],
-  domains: string[]
+  ownedSiteIds: number[]
 ): T[] {
-  if (domains.includes("all")) return sites
-  return sites.filter((s) => domainMatch(s.region, domains))
+  if (ownedSiteIds.length === 0) return []
+  const set = new Set(ownedSiteIds)
+  return sites.filter((s) => set.has(s.id))
 }
 
 function shouldHideRawData(visibility: ModuleVisibility): boolean {
@@ -34,4 +28,4 @@ function getDataVisibility(
   }
 }
 
-export { domainMatch, filterSitesByDomain, shouldHideRawData, getDataVisibility }
+export { filterSitesByOwnedIds, shouldHideRawData, getDataVisibility }

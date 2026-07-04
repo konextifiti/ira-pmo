@@ -6,7 +6,7 @@ import { Search, LayoutGrid, Table2 } from "lucide-react"
 import { supabase } from "@/lib/supabase"
 import StatusBadge from "@/components/ui/StatusBadge"
 import { usePermissions } from "@/lib/permissions/usePermissions"
-import { filterSitesByDomain, shouldHideRawData, getDataVisibility } from "@/lib/permissions/dataGate"
+import { filterSitesByOwnedIds, shouldHideRawData, getDataVisibility } from "@/lib/permissions/dataGate"
 
 interface Site {
   id: number
@@ -38,7 +38,7 @@ export default function TrackerPage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState("All")
   const [view, setView] = useState<"table" | "grid">("table")
-  const { getVisibility, domains } = usePermissions()
+  const { getVisibility, ownedSiteIds } = usePermissions()
 
   const visibility = getVisibility("bts_tracker")
   const { showAggregateOnly, domainFilter } = getDataVisibility(visibility, "bts_tracker")
@@ -52,12 +52,12 @@ export default function TrackerPage() {
         if (data) {
           let result = data as Site[]
           if (domainFilter) {
-            result = filterSitesByDomain(result, domains)
+            result = filterSitesByOwnedIds(result, ownedSiteIds)
           }
           setSites(result)
         }
       })
-  }, [domainFilter, domains])
+  }, [domainFilter, ownedSiteIds])
 
   const statuses = ["All", ...new Set(sites.map((s) => s.status))]
 
