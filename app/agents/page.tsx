@@ -4,13 +4,13 @@ const agentMeta: Record<
   string,
   { bg: string; code: string; label: string }
 > = {
-  A1: { bg: "#1A3A5C", code: "A1", label: "Spectrum Analyzer" },
-  A2: { bg: "#7D3C98", code: "A2", label: "Design Validator" },
-  A3: { bg: "#148F77", code: "A3", label: "Integration Verifier" },
-  A4: { bg: "#BA7517", code: "A4", label: "Configuration Auditor" },
-  A5: { bg: "#1A5276", code: "A5", label: "KPI Optimizer" },
-  A6: { bg: "#E67E22", code: "A6", label: "Field Surveyor" },
-  A7: { bg: "#C0392B", code: "A7", label: "Risk Assessor" },
+  A1: { bg: "#1A3A5C", code: "A1", label: "Transport Access Lead" },
+  A2: { bg: "#7D3C98", code: "A2", label: "Transport Design Engineer" },
+  A3: { bg: "#148F77", code: "A3", label: "Network Verification & Remote Access Engineer" },
+  A4: { bg: "#BA7517", code: "A4", label: "Vendor & Contract Specialist" },
+  A5: { bg: "#1A5276", code: "A5", label: "Integration & Pre-Test Engineer" },
+  A6: { bg: "#E67E22", code: "A6", label: "Field & Civil Coordinator" },
+  A7: { bg: "#C0392B", code: "A7", label: "PMO & Documentation Controller" },
 }
 
 export default async function AgentsPage() {
